@@ -95,3 +95,14 @@ Dal menu principale è accessibile la voce **"Le mie transazioni"**, che mostra 
 - **Integrazione cloud:** Google Sheets API v4 (append atomico) con autenticazione OAuth2
 - **Build & distribuzione:** `electron-builder` per generare i pacchetti per entrambe le piattaforme
 
+---
+
+## Avanzamento implementazione
+
+- Codice progetto avviato in `desktop/app`.
+- Fase 1 completata: setup React + Electron + script build/distribuzione.
+- Fase 2 avviata: login operatore senza password + logout + shell schermata principale.
+
+Comandi (Docker-only, dalla root del monorepo):
+- `./scripts/desktop-dev.sh`
+- `./scripts/desktop-build.sh`

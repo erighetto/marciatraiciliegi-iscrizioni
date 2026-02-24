@@ -1,0 +1,28 @@
+services:
+  desktop:
+    build:
+      context: .
+      dockerfile: desktop/Dockerfile.dev
+    working_dir: /workspace/desktop/app
+    volumes:
+      - .:/workspace
+      - desktop_node_modules:/workspace/desktop/app/node_modules
+    ports:
+      - "5173:5173"
+    stdin_open: true
+    tty: true
+
+  mobile:
+    build:
+      context: .
+      dockerfile: mobile/Dockerfile.dev
+    working_dir: /workspace/mobile/app
+    volumes:
+      - .:/workspace
+    ports:
+      - "8080:8080"
+    stdin_open: true
+    tty: true
+
+volumes:
+  desktop_node_modules:

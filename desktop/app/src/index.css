@@ -1,0 +1,160 @@
+:root {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.4;
+  font-weight: 500;
+  color: #13293d;
+  background: linear-gradient(135deg, #fff9e6 0%, #f8fbff 100%);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+.layout {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.panel {
+  width: min(920px, 100%);
+  background: #ffffff;
+  border: 2px solid #0d3b66;
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(13, 59, 102, 0.14);
+  padding: 2rem;
+}
+
+.login-panel {
+  max-width: 560px;
+}
+
+.dashboard-panel {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.subtitle {
+  color: #2a4f70;
+  font-size: 1.05rem;
+  margin-top: 0.45rem;
+}
+
+.form-stack {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+label {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+input,
+button {
+  min-height: 52px;
+  font-size: 1.05rem;
+  border-radius: 10px;
+}
+
+input {
+  border: 2px solid #9ab9d1;
+  padding: 0.75rem;
+}
+
+input:focus {
+  outline: 3px solid #8ecae6;
+  border-color: #1d6996;
+}
+
+button {
+  border: none;
+  background: #0d3b66;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(1.08);
+}
+
+.ghost-button {
+  width: 160px;
+  background: #f0f6fb;
+  color: #0d3b66;
+  border: 2px solid #0d3b66;
+}
+
+.welcome-box {
+  display: grid;
+  gap: 0.4rem;
+  border: 1px solid #b9d2e6;
+  background: #f8fbff;
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+}
+
+.welcome-text {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.hint-text {
+  font-weight: 500;
+  color: #325b7e;
+}
+
+.next-steps {
+  border-top: 1px dashed #9ab9d1;
+  padding-top: 1rem;
+}
+
+.next-steps h2 {
+  font-size: 1.25rem;
+}
+
+ul {
+  margin: 0.75rem 0 0;
+  padding-left: 1.4rem;
+}
+
+li {
+  margin: 0.45rem 0;
+  font-size: 1.05rem;
+}
+
+.error-text {
+  color: #a62222;
+  font-weight: 700;
+}

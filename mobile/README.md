@@ -104,3 +104,17 @@ Considerando il vincolo di non usare Android Studio, le opzioni più pratiche so
 
 Per l'OCR su testo manoscritto la soluzione più robusta è **Google Cloud Vision API** (Handwriting recognition), con fallback su **ML Kit on-device** per la modalità offline.
 
+---
+
+## Avanzamento implementazione
+
+- Codice progetto avviato in `mobile/app`.
+- Fase 1 completata: progetto Flutter creato e configurato per Android `minSdk 26`.
+- Fasi 3-4 avviate in modalità bootstrap: schermate iniziali per flusso barcode/OCR + revisione operatore.
+- Home e impostazioni disponibili come base della navigazione.
+
+Comandi (Docker-only, dalla root del monorepo):
+- `./scripts/mobile-analyze.sh`
+- `./scripts/mobile-test.sh`
+- `./scripts/mobile-run-web.sh`
+- `./scripts/mobile-build-apk.sh`
