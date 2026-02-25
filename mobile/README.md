@@ -108,13 +108,36 @@ Per l'OCR su testo manoscritto la soluzione più robusta è **Google Cloud Visio
 
 ## Avanzamento implementazione
 
-- Codice progetto avviato in `mobile/app`.
-- Fase 1 completata: progetto Flutter creato e configurato per Android `minSdk 26`.
-- Fasi 3-4 avviate in modalità bootstrap: schermate iniziali per flusso barcode/OCR + revisione operatore.
-- Home e impostazioni disponibili come base della navigazione.
+| Fase | Stato | Note |
+|------|--------|-----|
+| **1 – Setup** | ✅ Completata | Progetto Flutter, minSdk 26, cartelle `screens/`, `services/`, `models/`, tema e route. Dipendenze camera/barcode/OCR/Sheets da aggiungere in `pubspec.yaml` quando si implementano le fasi 3–5. |
+| **2 – Auth e configurazione** | ⚠️ Parziale | UI Impostazioni (operatore, ID/URL foglio) presente. **Mancano:** OAuth 2.0 Google, persistenza con `shared_preferences`/`flutter_secure_storage`, validazione URL foglio. |
+| **3 – Flusso Barcode** | ✅ Implementata | Fotocamera con **mobile_scanner** (scansione continua), feedback vibrazione, conferma FIASP/UMV e coda; fallback inserimento manuale. Sheets in Fase 5. |
+| **4 – Flusso OCR** | ✅ Implementata | Fotocamera (**image_picker**) → **ML Kit Text Recognition** → parsing nome/cognome/data → revisione; in errore: Ritenta foto, Inserimento manuale, Annulla. |
+| **5 – Consolidamento Sheets** | ⚠️ Parziale | `AcquisitionRecord` e `SyncQueueService` (coda in-memory). **Mancano:** SQLite (`sqflite`) per coda offline, Google Sheets API v4, sync automatica/manuale. |
+| **6 – Home e navigazione** | ⚠️ Parziale | Due pulsanti, Impostazioni, indicatore stato (simulato), contatore sessione. **Mancano:** caricamento impostazioni da storage, indicatore reale da `SyncQueueService`, rilevamento connessione. |
+| **7 – NFR** | ❌ Non avviata | |
+| **8 – Test e APK** | ❌ Non avviata | Script build presenti (`mobile-build-apk.sh`). |
+
+Dopo le integrazioni in corso: persistenza impostazioni, collegamento flussi → coda, Home che legge impostazioni e conteggio coda.
 
 Comandi (Docker-only, dalla root del monorepo):
 - `./scripts/mobile-analyze.sh`
 - `./scripts/mobile-test.sh`
 - `./scripts/mobile-run-web.sh`
 - `./scripts/mobile-build-apk.sh`
+
+### Emulatore BlueStacks (da host, non in Docker)
+
+BlueStacks gira sulla **tua macchina** (host). L'ADB deve quindi girare sulla host per connettersi a `localhost:5555`; **non** c'è un comando Docker da lanciare prima per sostituire questo passaggio.
+
+1. **Prerequisito sulla host:** avere `adb` in PATH (Android Studio, oppure `brew install android-platform-tools` su Mac).
+2. **Connessione ADB (sempre dalla host, dalla root del monorepo):**
+   ```bash
+   ./scripts/mobile-adb-connect.sh
+   ```
+   Oppure a mano: `adb connect localhost:5555` (porta predefinita; se BlueStacks usa un'altra: `./scripts/mobile-adb-connect.sh 5556`). Poi `flutter devices` (sulla host) dovrebbe elencare l'emulatore.
+3. **Esecuzione dell'app su BlueStacks:**
+   - **Con Flutter in locale:** dalla host, `cd mobile/app && flutter run` e scegli il dispositivo BlueStacks. I comandi Docker non vedono i device della host.
+   - **Solo con Docker:** costruisci l'APK con `./scripts/mobile-build-apk.sh` e installalo su BlueStacks (trascina l'APK o `adb install` dalla host).
+4. **Fotocamera:** in BlueStacks è virtuale o usa la webcam del PC. Per Leggi Tessera e Leggi Anagrafica concedi i permessi fotocamera all'app (Impostazioni app → Permessi).

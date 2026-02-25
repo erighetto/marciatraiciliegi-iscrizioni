@@ -156,3 +156,13 @@ flowchart LR
 ```
 
 Fase 5 è il collo di bottiglia condiviso; Fasi 3 e 4 possono essere sviluppate in parallelo dopo Fase 2.
+
+---
+
+## Integrazioni effettuate (stato attuale)
+
+- **Persistenza impostazioni (Fase 2 parziale):** `SettingsService` con `shared_preferences` salva/carica identificativo operatore e ID/URL foglio; Home carica i valori all’avvio e li salva al ritorno da Impostazioni.
+- **Coda condivisa (Fase 5 parziale):** `SyncQueueService` è un singleton; i flussi Leggi Tessera e Leggi Anagrafica creano `AcquisitionRecord` e li accodano; la Home mostra il numero di record in coda (`pendingCount`). Invio reale su Google Sheets e coda SQLite offline restano da implementare.
+- **Flussi → coda:** BarcodeScreen e OcrScreen ricevono `FlowPayload` (operatorId) dalla Home e, alla conferma, creano il record e chiamano `SyncQueueService.instance.enqueue(record)`.
+- **Fase 3 – Scanner barcode:** Integrati **mobile_scanner** e fotocamera: scansione continua, al rilevamento stop + vibrazione, schermata conferma con codice letto e scelta FIASP/UMV; pulsante "Inserimento manuale" come fallback.
+- **Fase 4 – OCR:** Integrati **image_picker** (foto) e **google_mlkit_text_recognition** (latino). Flusso: Scatta foto → OCR → parsing con `OcrParserService` (keyword "nato il", "cognome:", date GG/MM/AAAA) → schermata revisione; in caso di errore: Ritenta foto, Inserimento manuale, Annulla. Permesso `CAMERA` in AndroidManifest.

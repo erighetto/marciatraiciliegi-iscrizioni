@@ -17,6 +17,22 @@ Client desktop multipiattaforma (macOS e Windows) per registrare le iscrizioni a
 
 ---
 
+## Stato implementazione
+
+| Fase | Descrizione | Stato |
+|------|-------------|--------|
+| 1 | Setup progetto (Electron + React, electron-builder, IPC) | ✅ Completata |
+| 2 | Autenticazione operatore (login/logout, sessione) | ✅ Completata |
+| 3 | Schermata principale e form iscrizione (campi, tariffario, calcolo real-time) | ✅ Completata |
+| 4 | Gestione pagamento (contanti/digitale, resto, Consolida) | ✅ Completata |
+| 5 | Integrazione Google Drive e consolidamento (OAuth2, append Sheets) | ✅ Completata |
+| 6 | Coda offline e sincronizzazione (SQLite, retry) | ✅ Completata |
+| 7 | Storico "Le mie transazioni" (filtro operatore/data, export PDF/CSV) | ✅ Completata |
+| 8 | Usabilità e accessibilità (font, contrasto, tastiera) | ✅ Completata |
+| 9 | Build e distribuzione (documentazione installer) | ✅ Completata |
+
+---
+
 ## Fasi di Sviluppo
 
 ### Fase 1 — Setup progetto

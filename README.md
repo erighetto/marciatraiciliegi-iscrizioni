@@ -7,14 +7,15 @@ Monorepo che contiene due progetti:
 
 ## Stato attuale sviluppo
 
-- Desktop avviato in `desktop/app` con:
-  - setup Electron + React + TypeScript
-  - flusso login/logout operatore (fase 2)
-  - base UI sportello pronta per form iscrizione (fasi successive)
-- Mobile avviato in `mobile/app` con:
-  - setup Flutter (Android minSdk 26)
-  - home con due flussi (`Leggi Tessera`, `Leggi Anagrafica`)
-  - schermate placeholder operative per barcode/OCR + impostazioni
+- **Desktop** (`desktop/app`):
+  - **Fasi 1–9 implementate:** setup, login/logout, form iscrizione con tariffario e validazione, pagamento contanti/digitale, consolidamento su Google Sheets (OAuth2), coda offline SQLite, storico "Le mie transazioni" con export PDF/CSV, usabilità e documentazione build. Vedi `desktop/DEVELOPMENT-PLAN.md` e `desktop/README.md`.
+- **Mobile** (`mobile/app`):
+  - **Fase 1 completata:** setup Flutter (Android minSdk 26), struttura `lib/screens`, `lib/services`, `lib/models`, tema e route.
+  - **Fase 2 parziale:** schermata Impostazioni (operatore, ID/URL foglio) presente; **mancano** OAuth 2.0 Google e persistenza impostazioni (da integrare con `shared_preferences`/`flutter_secure_storage`).
+  - **Fasi 3–4 implementate:** Leggi Tessera con **fotocamera** e **mobile_scanner** (barcode), conferma FIASP/UMV e fallback inserimento manuale; Leggi Anagrafica con **fotocamera** (image_picker), **ML Kit OCR** (latino), parsing e schermata revisione. Invio in coda locale; **manca** sync su Google Sheets (Fase 5).
+  - **Fase 5 parziale:** modello `AcquisitionRecord` e `SyncQueueService` in-memory presenti; **mancano** SQLite per coda offline, Google Sheets API e sync.
+  - **Fase 6 parziale:** home con due pulsanti, accesso Impostazioni e indicatore stato; **mancano** lettura impostazioni persistenti e collegamento alla coda di sync.
+  - Dettaglio: `mobile/DEVELOPMENT-PLAN.md` e `mobile/README.md`.
 
 ## Sviluppo senza Node.js/Flutter locali
 
@@ -29,6 +30,7 @@ Comandi principali:
 - `./scripts/mobile-test.sh` -> test Flutter
 - `./scripts/mobile-run-web.sh` -> preview Flutter web su porta `8080`
 - `./scripts/mobile-build-apk.sh` -> build APK Android
+- `./scripts/mobile-adb-connect.sh` -> connette ADB a BlueStacks sulla host (prerequisito: adb in PATH). Per eseguire l’app sull’emulatore serve Flutter in locale: `cd mobile/app && flutter run`.
 
 Nota pratica:
 - Electron completo in container richiede configurazione display forwarding.

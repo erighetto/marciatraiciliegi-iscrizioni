@@ -1,9 +1,21 @@
 :root {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  line-height: 1.4;
+  line-height: 1.45;
   font-weight: 500;
-  color: #13293d;
+  --font-size-base: 1.1rem;
+  --font-size-large: 1.35rem;
+  --font-size-total: 1.5rem;
+  --color-text: #0d2137;
+  --color-text-muted: #2a4f70;
+  --color-bg: #ffffff;
+  --color-primary: #0d3b66;
+  --color-primary-contrast: #ffffff;
+  --color-focus: #1d6996;
+  --color-error: #a62222;
+  --color-border: #0d3b66;
+  color: var(--color-text);
   background: linear-gradient(135deg, #fff9e6 0%, #f8fbff 100%);
+  font-size: var(--font-size-base);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -40,8 +52,8 @@ p {
 
 .panel {
   width: min(920px, 100%);
-  background: #ffffff;
-  border: 2px solid #0d3b66;
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
   border-radius: 14px;
   box-shadow: 0 16px 40px rgba(13, 59, 102, 0.14);
   padding: 2rem;
@@ -64,8 +76,8 @@ p {
 }
 
 .subtitle {
-  color: #2a4f70;
-  font-size: 1.05rem;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-base);
   margin-top: 0.45rem;
 }
 
@@ -76,33 +88,38 @@ p {
 }
 
 label {
-  font-size: 1.1rem;
+  font-size: var(--font-size-base);
   font-weight: 700;
+  color: var(--color-text);
 }
 
 input,
 button {
   min-height: 52px;
-  font-size: 1.05rem;
+  font-size: var(--font-size-base);
   border-radius: 10px;
 }
 
 input {
-  border: 2px solid #9ab9d1;
+  border: 2px solid #5a8fb4;
   padding: 0.75rem;
+  color: var(--color-text);
+  background: var(--color-bg);
 }
 
 input:focus {
-  outline: 3px solid #8ecae6;
-  border-color: #1d6996;
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+  border-color: var(--color-focus);
 }
 
 button {
   border: none;
-  background: #0d3b66;
-  color: #ffffff;
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
   font-weight: 700;
   cursor: pointer;
+  font-size: var(--font-size-base);
 }
 
 button:hover {
@@ -110,10 +127,17 @@ button:hover {
 }
 
 .ghost-button {
-  width: 160px;
+  width: auto;
+  min-width: 160px;
   background: #f0f6fb;
-  color: #0d3b66;
-  border: 2px solid #0d3b66;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .welcome-box {
@@ -155,6 +179,215 @@ li {
 }
 
 .error-text {
-  color: #a62222;
+  color: var(--color-error);
   font-weight: 700;
+  font-size: var(--font-size-base);
+}
+
+.registration-form {
+  border-top: 1px solid #b9d2e6;
+  padding-top: 1rem;
+}
+
+.form-title {
+  font-size: 1.35rem;
+  margin-bottom: 1rem;
+}
+
+.form-row {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.form-row.read-only {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.form-row .label {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.form-row .value {
+  font-size: 1.15rem;
+}
+
+.totals-box {
+  margin: 1.25rem 0;
+  padding: 1rem 1.25rem;
+  background: #0d3b66;
+  color: #fff;
+  border-radius: 12px;
+}
+
+.totals-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem 1.5rem;
+  font-size: 1.05rem;
+}
+
+.totals-label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.totals-value {
+  text-align: right;
+  font-weight: 600;
+}
+
+.total-due {
+  margin: 0.75rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 2px solid rgba(255, 255, 255, 0.4);
+  font-size: var(--font-size-large);
+}
+
+.total-due strong {
+  font-size: var(--font-size-total);
+}
+
+.payment-fieldset {
+  border: 2px solid #9ab9d1;
+  border-radius: 10px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.payment-fieldset legend {
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding: 0 0.5rem;
+}
+
+.payment-options {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.resto-line {
+  margin: 0.35rem 0 0;
+  font-size: 1.1rem;
+}
+
+.consolidate-button {
+  margin-top: 1rem;
+  min-height: 56px;
+  font-size: var(--font-size-large);
+}
+
+.consolidate-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pending-badge {
+  margin-top: 0.35rem;
+  font-size: 0.95rem;
+  color: #c45a11;
+  font-weight: 700;
+}
+
+.google-auth-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #fff8e6;
+  border: 2px solid #c45a11;
+  border-radius: 10px;
+}
+
+.google-auth-banner p {
+  margin: 0;
+  flex: 1;
+  font-weight: 600;
+  color: #13293d;
+}
+
+.google-auth-banner button {
+  flex-shrink: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.storico-view {
+  display: grid;
+  gap: 1rem;
+}
+
+.storico-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.storico-header h2 {
+  font-size: 1.35rem;
+}
+
+.storico-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.storico-filters label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.storico-export {
+  display: flex;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.storico-loading {
+  margin: 1rem 0;
+  font-weight: 600;
+}
+
+.storico-table-wrap {
+  overflow-x: auto;
+}
+
+.storico-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1.05rem;
+}
+
+.storico-table th,
+.storico-table td {
+  border: 1px solid #9ab9d1;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+}
+
+.storico-table th {
+  background: #0d3b66;
+  color: #fff;
+  font-weight: 700;
+}
+
+.storico-table tbody tr:nth-child(even) {
+  background: #f8fbff;
 }

@@ -99,10 +99,29 @@ Dal menu principale è accessibile la voce **"Le mie transazioni"**, che mostra 
 
 ## Avanzamento implementazione
 
-- Codice progetto avviato in `desktop/app`.
-- Fase 1 completata: setup React + Electron + script build/distribuzione.
-- Fase 2 avviata: login operatore senza password + logout + shell schermata principale.
+- Codice progetto in `desktop/app`.
+- **Fasi 1–9 implementate:** setup, login/logout, form iscrizione con tariffario e validazione, pagamento contanti/digitale, consolidamento su Google Sheets (OAuth2, append), coda offline SQLite con retry, storico "Le mie transazioni" con filtro data ed export PDF/CSV, usabilità (font, contrasto, Tab/Enter), build e documentazione. Dettaglio in [DEVELOPMENT-PLAN.md](./DEVELOPMENT-PLAN.md).
 
-Comandi (Docker-only, dalla root del monorepo):
-- `./scripts/desktop-dev.sh`
-- `./scripts/desktop-build.sh`
+### Comandi (Docker, dalla root del monorepo)
+
+- `./scripts/desktop-dev.sh` — avvio renderer React su porta 5173
+- `FULL_ELECTRON=1 ./scripts/desktop-dev.sh` — avvio Electron completo (richiede GUI nel container)
+- `./scripts/desktop-build.sh` — build desktop
+
+### Build e distribuzione
+
+Dalla cartella `desktop/app`:
+
+- **Build dell’app (renderer + bundle):**  
+  `npm run build`  
+  Compila TypeScript e produce la build Vite in `dist/`.
+
+- **Generazione installer:**  
+  `npm run dist`  
+  Esegue `npm run build` e poi `electron-builder`, senza pubblicazione. Gli installer vengono creati in:
+  - **macOS:** `desktop/app/release/*.dmg`
+  - **Windows:** `desktop/app/release/*.exe` (installer NSIS)
+
+Per il **code signing** (firma dell’app su macOS/Windows), configurare le variabili d’ambiente richieste da `electron-builder` (es. `CSC_LINK`, `CSC_KEY_PASSWORD` per macOS; certificato Windows per .exe). Vedi la [documentazione electron-builder](https://www.electron.build/code-signing).
+
+Configurazione **Google Sheets e OAuth2** per il consolidamento e lo storico: vedi [docs/GOOGLE_SETUP.md](docs/GOOGLE_SETUP.md).
