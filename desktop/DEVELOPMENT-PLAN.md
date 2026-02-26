@@ -59,18 +59,16 @@ Client desktop multipiattaforma (macOS e Windows) per registrare le iscrizioni a
 
 ### Fase 3 — Schermata principale e form iscrizione
 
-- **Campi input:**
-  - Numero totale partecipanti (numerico).
-  - Di cui tesserati FIASP/UMV (numerico, ≤ totale).
-  - Di cui con dono promozionale (numerico, ≤ totale).
-- Validazione: tesserati ≤ totale, con dono ≤ totale; messaggi chiari in caso di errore.
-- Calcolo automatico non tesserati = totale − tesserati (solo visualizzazione, non editabile).
-- **Tariffario (costanti in app):**
-  - Tesserati: senza dono € 2,50, con dono € 4,00.
-  - Non tesserati: senza dono € 3,50, con dono € 5,00.
-- **Calcolo in tempo reale:** ad ogni modifica aggiornare subtotali (tesserati senza/con dono, non tesserati senza/con dono) e totale dovuto. UI con font grandi e contrasto elevato (requisito usabilità).
+- **Campi input (quattro gruppi espliciti, per tracciare ogni partecipante):**
+  - Tesserati FIASP/UMV con dono promozionale (numerico, ≥ 0).
+  - Tesserati FIASP/UMV senza dono (numerico, ≥ 0).
+  - Non tesserati con dono promozionale (numerico, ≥ 0).
+  - Non tesserati senza dono (numerico, ≥ 0).
+- Totale partecipanti = somma dei quattro (sola lettura). Validazione: somma > 0, tutti i campi ≥ 0.
+- **Tariffario (costanti in app):** tesserati senza dono € 2,50, con dono € 4,00; non tesserati senza dono € 3,50, con dono € 5,00.
+- **Calcolo in tempo reale:** subtotali per gruppo e totale dovuto. UI con font grandi e contrasto elevato.
 
-**Deliverable:** Form completo con calcolo tariffario real-time e validazione campi.
+**Deliverable:** Form con quattro gruppi espliciti, calcolo tariffario real-time e validazione; per ogni iscritto è ricostruibile “tesserato sì/no” e “con dono sì/no”.
 
 ---
 
@@ -88,7 +86,7 @@ Client desktop multipiattaforma (macOS e Windows) per registrare le iscrizioni a
 ### Fase 5 — Integrazione Google Drive e consolidamento
 
 - **OAuth2:** integrazione con Google (Sheets/Drive). Conservare token/refresh nel keychain di sistema (Keychain su macOS, Credential Manager su Windows), mai in file in chiaro.
-- **Modello dati transazione:** timestamp, nominativo operatore, postazione (identificativo macchina/istanza), numero partecipanti totali, tesserati, con dono, totale importo, modalità pagamento, importo ricevuto (se contanti), resto (se contanti).
+- **Modello dati transazione:** timestamp, nominativo operatore, postazione, numero partecipanti totali, **tesserati con dono**, **tesserati senza dono**, **non tesserati con dono**, **non tesserati senza dono**, totale importo, modalità pagamento, importo ricevuto (se contanti), resto (se contanti). I quattro gruppi permettono di ricostruire per ogni iscritto la tipologia (tesserato sì/no, con dono sì/no).
 - **Scrittura:** usare Google Sheets API v4 con **append** (append row); evitare lettura-modifica-scrittura per gestire concorrenza tra postazioni.
 - **Consolidamento:** al click “Consolida” costruire il record e inviarlo in append al foglio condiviso. In caso di successo: azzerare form e preparare nuova iscrizione.
 - **Errori di rete/conflitto:** non bloccare l’operatore; salvare la transazione in coda locale (vedi Fase 6) e mostrare indicatore visivo (es. “In attesa di sincronizzazione”).

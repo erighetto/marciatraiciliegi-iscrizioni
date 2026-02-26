@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "better-sqlite3": "^11.6.0",
+    "dotenv": "^16.4.5",
     "google-auth-library": "^9.15.0",
     "googleapis": "^144.0.0",
     "jspdf": "^2.5.2",

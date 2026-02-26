@@ -23,8 +23,10 @@ function init(userDataPath) {
       operator_name TEXT NOT NULL,
       station_id TEXT NOT NULL,
       total_participants INTEGER NOT NULL,
-      tesserati INTEGER NOT NULL,
-      con_dono INTEGER NOT NULL,
+      tesserati_con_dono INTEGER NOT NULL DEFAULT 0,
+      tesserati_senza_dono INTEGER NOT NULL DEFAULT 0,
+      non_tesserati_con_dono INTEGER NOT NULL DEFAULT 0,
+      non_tesserati_senza_dono INTEGER NOT NULL DEFAULT 0,
       total_amount REAL NOT NULL,
       payment_mode TEXT NOT NULL,
       importo_ricevuto REAL,
@@ -32,6 +34,10 @@ function init(userDataPath) {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
+  try { db.exec('ALTER TABLE pending_transactions ADD COLUMN tesserati_con_dono INTEGER DEFAULT 0'); } catch (_) {}
+  try { db.exec('ALTER TABLE pending_transactions ADD COLUMN tesserati_senza_dono INTEGER DEFAULT 0'); } catch (_) {}
+  try { db.exec('ALTER TABLE pending_transactions ADD COLUMN non_tesserati_con_dono INTEGER DEFAULT 0'); } catch (_) {}
+  try { db.exec('ALTER TABLE pending_transactions ADD COLUMN non_tesserati_senza_dono INTEGER DEFAULT 0'); } catch (_) {}
   return db;
 }
 
@@ -39,17 +45,20 @@ function insertPending(record) {
   if (!db) return null;
   const stmt = db.prepare(`
     INSERT INTO pending_transactions (
-      timestamp, operator_name, station_id, total_participants, tesserati, con_dono,
+      timestamp, operator_name, station_id, total_participants,
+      tesserati_con_dono, tesserati_senza_dono, non_tesserati_con_dono, non_tesserati_senza_dono,
       total_amount, payment_mode, importo_ricevuto, resto
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const result = stmt.run(
     record.timestamp,
     record.operatorName,
     record.stationId || '',
     record.totalParticipants,
-    record.tesserati,
-    record.conDono,
+    record.tesseratiConDono ?? 0,
+    record.tesseratiSenzaDono ?? 0,
+    record.nonTesseratiConDono ?? 0,
+    record.nonTesseratiSenzaDono ?? 0,
     record.totalAmount,
     record.paymentMode,
     record.importoRicevuto ?? null,
@@ -68,7 +77,9 @@ function getAllPending() {
   if (!db) return [];
   return db.prepare(`
     SELECT id, timestamp, operator_name AS operatorName, station_id AS stationId,
-           total_participants AS totalParticipants, tesserati, con_dono AS conDono,
+           total_participants AS totalParticipants,
+           tesserati_con_dono AS tesseratiConDono, tesserati_senza_dono AS tesseratiSenzaDono,
+           non_tesserati_con_dono AS nonTesseratiConDono, non_tesserati_senza_dono AS nonTesseratiSenzaDono,
            total_amount AS totalAmount, payment_mode AS paymentMode,
            importo_ricevuto AS importoRicevuto, resto, created_at AS createdAt
     FROM pending_transactions ORDER BY created_at ASC
@@ -79,7 +90,9 @@ function getPendingByOperator(operatorName) {
   if (!db) return [];
   return db.prepare(`
     SELECT id, timestamp, operator_name AS operatorName, station_id AS stationId,
-           total_participants AS totalParticipants, tesserati, con_dono AS conDono,
+           total_participants AS totalParticipants,
+           tesserati_con_dono AS tesseratiConDono, tesserati_senza_dono AS tesseratiSenzaDono,
+           non_tesserati_con_dono AS nonTesseratiConDono, non_tesserati_senza_dono AS nonTesseratiSenzaDono,
            total_amount AS totalAmount, payment_mode AS paymentMode,
            importo_ricevuto AS importoRicevuto, resto, created_at AS createdAt
     FROM pending_transactions WHERE operator_name = ? ORDER BY created_at ASC
@@ -95,7 +108,9 @@ function getPendingRow(id) {
   if (!db) return null;
   return db.prepare(`
     SELECT id, timestamp, operator_name AS operatorName, station_id AS stationId,
-           total_participants AS totalParticipants, tesserati, con_dono AS conDono,
+           total_participants AS totalParticipants,
+           tesserati_con_dono AS tesseratiConDono, tesserati_senza_dono AS tesseratiSenzaDono,
+           non_tesserati_con_dono AS nonTesseratiConDono, non_tesserati_senza_dono AS nonTesseratiSenzaDono,
            total_amount AS totalAmount, payment_mode AS paymentMode,
            importo_ricevuto AS importoRicevuto, resto
     FROM pending_transactions WHERE id = ?

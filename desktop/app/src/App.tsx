@@ -30,10 +30,11 @@ function App() {
   const [runtimeInfo, setRuntimeInfo] = useState<RuntimeInfo | null>(null)
   const [loginError, setLoginError] = useState<string | null>(null)
 
-  // Form iscrizione (Fase 3)
-  const [totalParticipants, setTotalParticipants] = useState('')
-  const [tesserati, setTesserati] = useState('')
-  const [conDono, setConDono] = useState('')
+  // Form iscrizione: quattro gruppi espliciti (tesserato sì/no × con dono sì/no)
+  const [tesseratiConDono, setTesseratiConDono] = useState('')
+  const [tesseratiSenzaDono, setTesseratiSenzaDono] = useState('')
+  const [nonTesseratiConDono, setNonTesseratiConDono] = useState('')
+  const [nonTesseratiSenzaDono, setNonTesseratiSenzaDono] = useState('')
 
   // Pagamento (Fase 4)
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('contanti')
@@ -58,23 +59,16 @@ function App() {
     return `Postazione ${runtimeInfo.platform} - app v${runtimeInfo.appVersion}`
   }, [runtimeInfo])
 
-  const tot = parseNum(totalParticipants)
-  const tess = parseNum(tesserati)
-  const dono = parseNum(conDono)
-  const nonTesserati = Math.max(0, tot - tess)
+  const a = parseNum(tesseratiConDono)
+  const b = parseNum(tesseratiSenzaDono)
+  const c = parseNum(nonTesseratiConDono)
+  const d = parseNum(nonTesseratiSenzaDono)
+  const tot = a + b + c + d
 
-  const validTesserati = tot >= tess
-  const validConDono = tot >= dono
-
-  const tesseratiConDono = Math.min(tess, dono)
-  const tesseratiSenzaDono = tess - tesseratiConDono
-  const nonTesseratiConDono = dono - tesseratiConDono
-  const nonTesseratiSenzaDono = nonTesserati - nonTesseratiConDono
-
-  const subtotaleTesseratiSenzaDono = tesseratiSenzaDono * TARIFFA_TESSERATI_SENZA_DONO
-  const subtotaleTesseratiConDono = tesseratiConDono * TARIFFA_TESSERATI_CON_DONO
-  const subtotaleNonTesseratiSenzaDono = nonTesseratiSenzaDono * TARIFFA_NON_TESSERATI_SENZA_DONO
-  const subtotaleNonTesseratiConDono = nonTesseratiConDono * TARIFFA_NON_TESSERATI_CON_DONO
+  const subtotaleTesseratiSenzaDono = b * TARIFFA_TESSERATI_SENZA_DONO
+  const subtotaleTesseratiConDono = a * TARIFFA_TESSERATI_CON_DONO
+  const subtotaleNonTesseratiSenzaDono = d * TARIFFA_NON_TESSERATI_SENZA_DONO
+  const subtotaleNonTesseratiConDono = c * TARIFFA_NON_TESSERATI_CON_DONO
   const totaleDovuto =
     subtotaleTesseratiSenzaDono +
     subtotaleTesseratiConDono +
@@ -85,7 +79,7 @@ function App() {
   const resto = paymentMode === 'contanti' ? Math.max(0, importoRicevutoNum - totaleDovuto) : 0
   const pagamentoContantiOk = paymentMode !== 'contanti' || importoRicevutoNum >= totaleDovuto
 
-  const formValid = tot > 0 && validTesserati && validConDono && dono <= tot
+  const formValid = tot > 0 && a >= 0 && b >= 0 && c >= 0 && d >= 0
   const canConsolidate = formValid && pagamentoContantiOk
 
   const handleLogin = (event: FormEvent<HTMLFormElement>) => {
@@ -115,34 +109,41 @@ function App() {
       operatorName: sessionOperator,
       stationId,
       totalParticipants: tot,
-      tesserati: tess,
-      conDono: dono,
+      tesseratiConDono: a,
+      tesseratiSenzaDono: b,
+      nonTesseratiConDono: c,
+      nonTesseratiSenzaDono: d,
       totalAmount: Math.round(totaleDovuto * 100) / 100,
       paymentMode,
       importoRicevuto: paymentMode === 'contanti' ? importoRicevutoNum : undefined,
       resto: paymentMode === 'contanti' ? Math.round(resto * 100) / 100 : undefined,
     }
     if (window.desktopBridge?.googleAppendRow) {
+      setConsolidateMessage(null)
       try {
         const result = await window.desktopBridge.googleAppendRow(payload)
         if (result?.queued) {
           refreshPendingCount()
+          setConsolidateMessage('Transazione salvata in coda; verrà inviata al foglio quando la connessione è disponibile.')
         } else {
-          setTotalParticipants('')
-          setTesserati('')
-          setConDono('')
+          setConsolidateMessage(null)
+          setTesseratiConDono('')
+          setTesseratiSenzaDono('')
+          setNonTesseratiConDono('')
+          setNonTesseratiSenzaDono('')
           setImportoRicevuto('')
         }
-      } catch {
+      } catch (err) {
         refreshPendingCount()
+        setConsolidateMessage('Errore durante l\'invio. La transazione è stata messa in coda e verrà sincronizzata quando possibile.')
       }
     } else {
-      setTotalParticipants('')
-      setTesserati('')
-      setConDono('')
-      setImportoRicevuto('')
+      setConsolidateMessage(
+        'Per salvare su Google Sheets avvia l\'app con Electron: dalla root del progetto usa FULL_ELECTRON=1 ./scripts/desktop-dev.sh'
+      )
     }
   }
+
 
   const refreshPendingCount = () => {
     if (window.desktopBridge?.getPendingCount) {
@@ -153,6 +154,7 @@ function App() {
   const [pendingCount, setPendingCount] = useState(0)
   const [hasGoogleAuth, setHasGoogleAuth] = useState(false)
   const [view, setView] = useState<'sportello' | 'storico'>('sportello')
+  const [consolidateMessage, setConsolidateMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (!sessionOperator) return
@@ -254,68 +256,70 @@ function App() {
             }}
           >
             <div className="form-row">
-              <label htmlFor="totalParticipants">Numero totale partecipanti</label>
+              <label htmlFor="tesseratiConDono">Tesserati FIASP/UMV con dono promozionale</label>
               <input
-                id="totalParticipants"
+                id="tesseratiConDono"
                 type="number"
                 min={0}
-                value={totalParticipants}
-                onChange={(e) => setTotalParticipants(e.target.value)}
-                aria-invalid={tot > 0 && !validTesserati ? true : undefined}
+                value={tesseratiConDono}
+                onChange={(e) => setTesseratiConDono(e.target.value)}
               />
             </div>
             <div className="form-row">
-              <label htmlFor="tesserati">Di cui tesserati FIASP/UMV</label>
+              <label htmlFor="tesseratiSenzaDono">Tesserati FIASP/UMV senza dono</label>
               <input
-                id="tesserati"
+                id="tesseratiSenzaDono"
                 type="number"
                 min={0}
-                value={tesserati}
-                onChange={(e) => setTesserati(e.target.value)}
+                value={tesseratiSenzaDono}
+                onChange={(e) => setTesseratiSenzaDono(e.target.value)}
               />
-              {tot > 0 && !validTesserati ? (
-                <p className="error-text">I tesserati non possono superare il totale.</p>
-              ) : null}
             </div>
             <div className="form-row">
-              <label htmlFor="conDono">Di cui con dono promozionale</label>
+              <label htmlFor="nonTesseratiConDono">Non tesserati con dono promozionale</label>
               <input
-                id="conDono"
+                id="nonTesseratiConDono"
                 type="number"
                 min={0}
-                value={conDono}
-                onChange={(e) => setConDono(e.target.value)}
+                value={nonTesseratiConDono}
+                onChange={(e) => setNonTesseratiConDono(e.target.value)}
               />
-              {tot > 0 && !validConDono ? (
-                <p className="error-text">Il numero con dono non può superare il totale.</p>
-              ) : null}
+            </div>
+            <div className="form-row">
+              <label htmlFor="nonTesseratiSenzaDono">Non tesserati senza dono</label>
+              <input
+                id="nonTesseratiSenzaDono"
+                type="number"
+                min={0}
+                value={nonTesseratiSenzaDono}
+                onChange={(e) => setNonTesseratiSenzaDono(e.target.value)}
+              />
             </div>
             <div className="form-row read-only">
-              <span className="label">Non tesserati</span>
-              <span className="value">{nonTesserati}</span>
+              <span className="label">Totale partecipanti</span>
+              <span className="value">{tot}</span>
             </div>
-
             <div className="totals-box">
               <div className="totals-grid">
-                <span className="totals-label">Tesserati senza dono</span>
-                <span className="totals-value">
-                  {tesseratiSenzaDono} × € {TARIFFA_TESSERATI_SENZA_DONO.toFixed(2)} = €{' '}
-                  {subtotaleTesseratiSenzaDono.toFixed(2)}
-                </span>
                 <span className="totals-label">Tesserati con dono</span>
                 <span className="totals-value">
-                  {tesseratiConDono} × € {TARIFFA_TESSERATI_CON_DONO.toFixed(2)} = €{' '}
+                  {a} × € {TARIFFA_TESSERATI_CON_DONO.toFixed(2)} = €{' '}
                   {subtotaleTesseratiConDono.toFixed(2)}
                 </span>
-                <span className="totals-label">Non tesserati senza dono</span>
+                <span className="totals-label">Tesserati senza dono</span>
                 <span className="totals-value">
-                  {nonTesseratiSenzaDono} × € {TARIFFA_NON_TESSERATI_SENZA_DONO.toFixed(2)} = €{' '}
-                  {subtotaleNonTesseratiSenzaDono.toFixed(2)}
+                  {b} × € {TARIFFA_TESSERATI_SENZA_DONO.toFixed(2)} = €{' '}
+                  {subtotaleTesseratiSenzaDono.toFixed(2)}
                 </span>
                 <span className="totals-label">Non tesserati con dono</span>
                 <span className="totals-value">
-                  {nonTesseratiConDono} × € {TARIFFA_NON_TESSERATI_CON_DONO.toFixed(2)} = €{' '}
+                  {c} × € {TARIFFA_NON_TESSERATI_CON_DONO.toFixed(2)} = €{' '}
                   {subtotaleNonTesseratiConDono.toFixed(2)}
+                </span>
+                <span className="totals-label">Non tesserati senza dono</span>
+                <span className="totals-value">
+                  {d} × € {TARIFFA_NON_TESSERATI_SENZA_DONO.toFixed(2)} = €{' '}
+                  {subtotaleNonTesseratiSenzaDono.toFixed(2)}
                 </span>
               </div>
               <p className="total-due">
@@ -369,6 +373,11 @@ function App() {
             <button type="submit" className="consolidate-button" disabled={!canConsolidate}>
               Consolida
             </button>
+            {consolidateMessage ? (
+              <p className="consolidate-message" role="alert">
+                {consolidateMessage}
+              </p>
+            ) : null}
           </form>
         </div>
       </section>

@@ -23,8 +23,8 @@ Prerequisito unico: Docker + Docker Compose.
 
 Comandi principali:
 
-- `./scripts/desktop-dev.sh` -> avvia renderer React desktop su porta `5173`
-- `FULL_ELECTRON=1 ./scripts/desktop-dev.sh` -> prova avvio Electron completo (richiede supporto GUI nel container)
+- `./scripts/desktop-dev.sh` -> avvia solo il renderer React in Docker su porta `5173`
+- `FULL_ELECTRON=1 ./scripts/desktop-dev.sh` -> avvia Electron + renderer **in locale** (non in Docker; serve Node/npm installati). Necessario per usare “Consolida” e Google Sheets.
 - `./scripts/desktop-build.sh` -> build desktop
 - `./scripts/mobile-analyze.sh` -> analisi Flutter
 - `./scripts/mobile-test.sh` -> test Flutter
@@ -33,5 +33,5 @@ Comandi principali:
 - `./scripts/mobile-adb-connect.sh` -> connette ADB a BlueStacks sulla host (prerequisito: adb in PATH). Per eseguire l’app sull’emulatore serve Flutter in locale: `cd mobile/app && flutter run`.
 
 Nota pratica:
-- Electron completo in container richiede configurazione display forwarding.
+- Con `FULL_ELECTRON=1` lo script esce da Docker e avvia l’app sul tuo PC (Electron richiede display e librerie grafiche, non disponibili nel container). Assicurati di avere Node.js e npm installati in locale.
 - Per Android reale/emulatore, normalmente si usa device con `adb` esterno o pipeline build APK in container.

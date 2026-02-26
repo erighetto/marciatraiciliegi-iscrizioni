@@ -1,5 +1,7 @@
-const { app, BrowserWindow, ipcMain, safeStorage } = require('electron');
 const path = require('node:path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+
+const { app, BrowserWindow, ipcMain, safeStorage } = require('electron');
 const fs = require('node:fs');
 const http = require('node:http');
 const os = require('node:os');
@@ -125,8 +127,10 @@ function transactionToRow(payload) {
     payload.operatorName,
     payload.stationId || '',
     String(payload.totalParticipants),
-    String(payload.tesserati),
-    String(payload.conDono),
+    String(payload.tesseratiConDono ?? 0),
+    String(payload.tesseratiSenzaDono ?? 0),
+    String(payload.nonTesseratiConDono ?? 0),
+    String(payload.nonTesseratiSenzaDono ?? 0),
     String(payload.totalAmount),
     payload.paymentMode,
     payload.importoRicevuto != null ? String(payload.importoRicevuto) : '',
@@ -136,7 +140,7 @@ function transactionToRow(payload) {
 
 function appendToSheet(payload) {
   const sheetId = process.env.GOOGLE_SHEET_ID;
-  const range = process.env.GOOGLE_SHEET_RANGE || 'Foglio1!A:K';
+  const range = process.env.GOOGLE_SHEET_RANGE || 'Foglio1!A:L';
   if (!sheetId) throw new Error('GOOGLE_SHEET_ID non configurato');
   const client = getOAuth2Client();
   if (!client) throw new Error('Google non configurato o non autenticato');
@@ -182,8 +186,10 @@ function syncPendingQueue() {
       operatorName: row.operatorName,
       stationId: row.stationId,
       totalParticipants: row.totalParticipants,
-      tesserati: row.tesserati,
-      conDono: row.conDono,
+      tesseratiConDono: row.tesseratiConDono ?? 0,
+      tesseratiSenzaDono: row.tesseratiSenzaDono ?? 0,
+      nonTesseratiConDono: row.nonTesseratiConDono ?? 0,
+      nonTesseratiSenzaDono: row.nonTesseratiSenzaDono ?? 0,
       totalAmount: row.totalAmount,
       paymentMode: row.paymentMode,
       importoRicevuto: row.importoRicevuto,
@@ -302,8 +308,10 @@ app.whenReady().then(() => {
     'operatorName',
     'stationId',
     'totalParticipants',
-    'tesserati',
-    'conDono',
+    'tesseratiConDono',
+    'tesseratiSenzaDono',
+    'nonTesseratiConDono',
+    'nonTesseratiSenzaDono',
     'totalAmount',
     'paymentMode',
     'importoRicevuto',
@@ -312,7 +320,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle('sheets:read-range', async () => {
     const sheetId = process.env.GOOGLE_SHEET_ID;
-    const range = process.env.GOOGLE_SHEET_RANGE || 'Foglio1!A:J';
+    const range = process.env.GOOGLE_SHEET_RANGE || 'Foglio1!A:L';
     if (!sheetId) return [];
     const client = getOAuth2Client();
     if (!client) return [];

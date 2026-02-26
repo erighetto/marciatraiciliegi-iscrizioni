@@ -292,6 +292,16 @@ li {
   cursor: not-allowed;
 }
 
+.consolidate-message {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fff8e6;
+  border: 1px solid #c45a11;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #13293d;
+}
+
 .pending-badge {
   margin-top: 0.35rem;
   font-size: 0.95rem;

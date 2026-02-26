@@ -16,13 +16,14 @@ All'avvio dell'applicazione viene presentata una schermata di login minimale: l'
 
 ### 3.1 Dati di input
 
-L'operatore compila i seguenti campi per ciascun gruppo di partecipanti che si presenta allo sportello:
+Per ogni gruppo di partecipanti che si presenta allo sportello l'operatore inserisce **quattro numeri** che identificano univocamente la composizione (e permettono di ricostruire per ogni partecipante se era tesserato o meno e se ha scelto il biglietto con o senza dono):
 
-- **Numero totale partecipanti** (campo numerico)
-- Di cui **tesserati FIASP/UMV** (campo numerico, ≤ totale partecipanti)
-- Di cui **con riconoscimento/dono promozionale** (campo numerico, ≤ totale partecipanti)
+- **Tesserati FIASP/UMV con dono promozionale** (numerico, ≥ 0)
+- **Tesserati FIASP/UMV senza dono** (numerico, ≥ 0)
+- **Non tesserati con dono promozionale** (numerico, ≥ 0)
+- **Non tesserati senza dono** (numerico, ≥ 0)
 
-Il sistema deduce automaticamente i non tesserati come differenza tra il totale e i tesserati.
+Il **numero totale partecipanti** è la somma dei quattro valori (calcolata e mostrata in sola lettura). Validazione: la somma deve essere > 0; tutti i campi ≥ 0.
 
 ### 3.2 Tariffario
 
@@ -35,12 +36,10 @@ La maggiorazione di € 1,00 per i non soci si applica in entrambe le fasce.
 
 ### 3.3 Calcolo automatico
 
-Il sistema calcola in tempo reale, aggiornando i valori ad ogni modifica dei campi:
+Il sistema calcola in tempo reale, ad ogni modifica dei quattro campi:
 
-- Subtotale tesserati senza dono
-- Subtotale tesserati con dono
-- Subtotale non tesserati senza dono
-- Subtotale non tesserati con dono
+- Totale partecipanti (somma dei quattro gruppi)
+- Subtotale per ogni gruppo (quantità × prezzo unitario secondo il tariffario)
 - **Totale dovuto** (somma dei quattro subtotali)
 
 ### 3.4 Gestione pagamento

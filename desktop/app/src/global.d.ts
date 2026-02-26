@@ -9,8 +9,10 @@ declare global {
     operatorName: string
     stationId: string
     totalParticipants: number
-    tesserati: number
-    conDono: number
+    tesseratiConDono: number
+    tesseratiSenzaDono: number
+    nonTesseratiConDono: number
+    nonTesseratiSenzaDono: number
     totalAmount: number
     paymentMode: 'contanti' | 'digitale'
     importoRicevuto?: number
@@ -27,7 +29,7 @@ declare global {
       googleAuthOpenWindow?: () => Promise<{ success: boolean; error?: string }>
       googleAppendRow?: (payload: TransactionPayload) => Promise<{ queued?: boolean }>
       getPendingCount?: () => Promise<number>
-      getPendingList?: () => Promise<Array<Record<string, unknown>>>
+      getPendingList?: (operatorName?: string) => Promise<Array<Record<string, unknown>>>
       sheetsReadRange?: () => Promise<unknown[]>
     }
   }

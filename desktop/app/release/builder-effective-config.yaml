@@ -1,0 +1,17 @@
+directories:
+  output: release
+  buildResources: build
+appId: it.marciatraiclilegi.desktop
+productName: MarciaTraICiliegi
+files:
+  - filter:
+      - dist/**/*
+      - electron/**/*
+      - package.json
+mac:
+  target:
+    - dmg
+win:
+  target:
+    - nsis
+electronVersion: 40.6.0

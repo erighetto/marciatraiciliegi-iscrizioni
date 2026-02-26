@@ -22,18 +22,22 @@ Imposta prima di avviare l’app (o in un file `.env` se supportato):
 - `GOOGLE_CLIENT_ID` — ID client OAuth.
 - `GOOGLE_CLIENT_SECRET` — Segreto client OAuth.
 - `GOOGLE_SHEET_ID` — ID del foglio (dall’URL: `https://docs.google.com/spreadsheets/d/QUESTO_È_L_ID/edit`).
-- `GOOGLE_SHEET_RANGE` (opzionale) — Intervallo in notazione A1, es. `Foglio1!A:J`. Default: `Foglio1!A:J`.
+- `GOOGLE_SHEET_RANGE` (opzionale) — Intervallo in notazione A1, es. `Foglio1!A:L`. Default: `Foglio1!A:L`.
+
+**Importante:** il file `.env` va creato in **`desktop/app/.env`** (non in `mobile/`). L'app lo carica solo se avviata con Electron. In sviluppo, dalla root del monorepo: **`FULL_ELECTRON=1 ./scripts/desktop-dev.sh`**.
 
 ## 4. Primo avvio del foglio
 
-Il foglio deve avere almeno una riga (può essere intestazione). Le colonne attese sono, in ordine:
+Il foglio deve avere almeno una riga (può essere intestazione). Le colonne scritte in append sono, in ordine:
 
 - Timestamp  
 - Nominativo operatore  
 - Postazione  
 - Totale partecipanti  
-- Tesserati  
-- Con dono  
+- Tesserati con dono  
+- Tesserati senza dono  
+- Non tesserati con dono  
+- Non tesserati senza dono  
 - Totale importo  
 - Modalità pagamento  
 - Importo ricevuto (se contanti)  

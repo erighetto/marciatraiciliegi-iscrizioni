@@ -84,19 +84,19 @@ export function StoricoView({ sessionOperator, onBack }: Props) {
     ])
       .then(([sheets, pending]) => {
         if (cancelled) return
-        const sheet = (sheets as Array<Record<string, unknown>>).map((r) => ({
+        const sheet: TransactionRow[] = (sheets as Array<Record<string, unknown>>).map((r) => ({
           timestamp: String(r.timestamp ?? ''),
           operatorName: String(r.operatorName ?? ''),
-          totalParticipants: r.totalParticipants ?? '',
-          totalAmount: r.totalAmount ?? '',
+          totalParticipants: String(r.totalParticipants ?? ''),
+          totalAmount: String(r.totalAmount ?? ''),
           paymentMode: String(r.paymentMode ?? ''),
           synced: true,
         }))
-        const pend = (pending as Array<Record<string, unknown>>).map((r) => ({
+        const pend: TransactionRow[] = (pending as Array<Record<string, unknown>>).map((r) => ({
           timestamp: String(r.timestamp ?? ''),
           operatorName: String(r.operatorName ?? ''),
-          totalParticipants: r.totalParticipants ?? '',
-          totalAmount: r.totalAmount ?? '',
+          totalParticipants: String(r.totalParticipants ?? ''),
+          totalAmount: String(r.totalAmount ?? ''),
           paymentMode: String(r.paymentMode ?? ''),
           synced: false,
         }))
