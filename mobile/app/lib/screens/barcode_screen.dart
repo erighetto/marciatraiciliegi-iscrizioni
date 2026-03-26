@@ -28,16 +28,48 @@ class _BarcodeScreenState extends State<BarcodeScreen> {
   /// Metodo usato per questo record: 'barcode' se letto da camera, 'manual' altrimenti.
   String _metodoInserimento = 'barcode';
 
-  late final MobileScannerController _scannerController;
+  late MobileScannerController _scannerController;
+  bool _torchOn = false;
+  CameraFacing _facing = CameraFacing.back;
 
   @override
   void initState() {
     super.initState();
+    _initScanner();
+  }
+
+  void _initScanner() {
     _scannerController = MobileScannerController(
-      detectionSpeed: DetectionSpeed.normal,
-      facing: CameraFacing.back,
-      torchEnabled: false,
+      detectionSpeed: DetectionSpeed.noDuplicates,
+      facing: _facing,
+      torchEnabled: _torchOn,
+      formats: const [
+        BarcodeFormat.code128,
+        BarcodeFormat.code39,
+        BarcodeFormat.code93,
+        BarcodeFormat.codabar,
+        BarcodeFormat.ean13,
+        BarcodeFormat.ean8,
+        BarcodeFormat.upcA,
+        BarcodeFormat.upcE,
+        BarcodeFormat.itf,
+        BarcodeFormat.qrCode,
+      ],
     );
+  }
+
+  Future<void> _toggleTorch() async {
+    await _scannerController.toggleTorch();
+    setState(() => _torchOn = !_torchOn);
+  }
+
+  Future<void> _switchCamera() async {
+    await _scannerController.dispose();
+    setState(() {
+      _facing = _facing == CameraFacing.back ? CameraFacing.front : CameraFacing.back;
+      _detectedCode = null;
+      _initScanner();
+    });
   }
 
   @override
@@ -127,6 +159,18 @@ class _BarcodeScreenState extends State<BarcodeScreen> {
       appBar: AppBar(
         title: const Text('Leggi Tessera'),
         actions: [
+          if (!inReview) ...[
+            IconButton(
+              onPressed: _toggleTorch,
+              icon: Icon(_torchOn ? Icons.flash_on : Icons.flash_off),
+              tooltip: 'Torcia',
+            ),
+            IconButton(
+              onPressed: _switchCamera,
+              icon: const Icon(Icons.flip_camera_android),
+              tooltip: 'Cambia camera',
+            ),
+          ],
           if (inReview)
             TextButton(
               onPressed: _manualMode ? _backToScanner : _switchToManual,
@@ -144,12 +188,24 @@ class _BarcodeScreenState extends State<BarcodeScreen> {
     return Column(
       children: [
         Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: MobileScanner(
-              controller: _scannerController,
-              onDetect: _onBarcodeDetected,
-            ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: MobileScanner(
+                  controller: _scannerController,
+                  onDetect: _onBarcodeDetected,
+                ),
+              ),
+              // Mirino: rettangolo orizzontale per barcode lineari
+              IgnorePointer(
+                child: CustomPaint(
+                  size: Size.infinite,
+                  painter: _BarcodeScanOverlayPainter(),
+                ),
+              ),
+            ],
           ),
         ),
         Padding(
@@ -157,8 +213,13 @@ class _BarcodeScreenState extends State<BarcodeScreen> {
           child: Column(
             children: [
               Text(
-                'Inquadra il barcode della tessera',
+                'Centra il barcode nel rettangolo',
                 style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Tieni la tessera ferma e ben illuminata',
+                style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
@@ -232,4 +293,52 @@ class _BarcodeScreenState extends State<BarcodeScreen> {
       ],
     );
   }
+}
+
+/// Disegna un rettangolo orizzontale semi-trasparente come guida per i barcode lineari.
+class _BarcodeScanOverlayPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double rectW = size.width * 0.85;
+    final double rectH = size.height * 0.18;
+    final Rect scanRect = Rect.fromCenter(
+      center: Offset(size.width / 2, size.height / 2),
+      width: rectW,
+      height: rectH,
+    );
+
+    // Oscura tutto tranne il rettangolo di scansione
+    final Paint dimPaint = Paint()..color = Colors.black54;
+    canvas.drawPath(
+      Path.combine(
+        PathOperation.difference,
+        Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height)),
+        Path()..addRRect(RRect.fromRectAndRadius(scanRect, const Radius.circular(8))),
+      ),
+      dimPaint,
+    );
+
+    // Bordo verde del mirino
+    final Paint borderPaint = Paint()
+      ..color = Colors.greenAccent
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(scanRect, const Radius.circular(8)),
+      borderPaint,
+    );
+
+    // Linea rossa centrale orizzontale
+    final Paint linePaint = Paint()
+      ..color = Colors.red.withValues(alpha: 0.7)
+      ..strokeWidth = 1.5;
+    canvas.drawLine(
+      Offset(scanRect.left + 8, scanRect.center.dy),
+      Offset(scanRect.right - 8, scanRect.center.dy),
+      linePaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -14,7 +14,9 @@ class OcrAnagraficaResult {
 }
 
 /// Parsing euristico del testo OCR per estrarre nome, cognome e data di nascita.
-/// Cerca keyword ("nato il", "cognome:", "nome:") e pattern data GG/MM/AAAA o GG-MM-AAAA.
+///
+/// Ottimizzato per moduli con etichette stampate ("Nome:", "Cognome:", "Data di nascita:")
+/// e valori scritti a mano nella stessa riga o nella riga successiva.
 class OcrParserService {
   static final _datePattern = RegExp(
     r'\b(\d{1,2})[/\-\.](\d{1,2})[/\-\.](\d{2,4})\b',
@@ -33,38 +35,50 @@ class OcrParserService {
     String cognome = '';
     String dataNascita = '';
 
-    // Cerca "nato il" / "nata il" / "data di nascita" / "nascita"
-    final lower = rawText.toLowerCase();
-    final natoMatch = RegExp(
-      r'(?:nato\s+il|nata\s+il|data\s+di\s+nascita|nascita)[:\s]*(\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4})',
-      caseSensitive: false,
-    ).firstMatch(lower);
-    if (natoMatch != null) {
-      dataNascita = natoMatch.group(1) ?? '';
-    }
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      final lineLower = line.toLowerCase();
 
-    // Cerca qualsiasi data nel testo se non ancora trovata
-    if (dataNascita.isEmpty) {
-      final dateMatch = _datePattern.firstMatch(rawText);
-      if (dateMatch != null) {
-        dataNascita = dateMatch.group(0) ?? '';
+      // ---- Data di nascita ----
+      if (RegExp(r'nasc|nato|nata', caseSensitive: false).hasMatch(lineLower)) {
+        var dateMatch = _datePattern.firstMatch(line);
+        // Valore sulla riga successiva se non nella stessa
+        if (dateMatch == null && i + 1 < lines.length) {
+          dateMatch = _datePattern.firstMatch(lines[i + 1]);
+        }
+        if (dateMatch != null) {
+          dataNascita = _normalizeDate(dateMatch);
+        }
+        continue;
+      }
+
+      // ---- Cognome (controlla prima di "nome" perché "cognome" contiene "nome") ----
+      if (RegExp(r'^cognome', caseSensitive: false).hasMatch(lineLower)) {
+        final value = _valueAfterColon(line);
+        if (value.isNotEmpty) {
+          cognome = value;
+        } else if (i + 1 < lines.length && _isNameLine(lines[i + 1])) {
+          cognome = lines[i + 1].trim();
+        }
+        continue;
+      }
+
+      // ---- Nome ----
+      if (RegExp(r'^nome', caseSensitive: false).hasMatch(lineLower)) {
+        final value = _valueAfterColon(line);
+        if (value.isNotEmpty) {
+          nome = value;
+        } else if (i + 1 < lines.length && _isNameLine(lines[i + 1])) {
+          nome = lines[i + 1].trim();
+        }
+        continue;
       }
     }
 
-    // Keyword "cognome:" / "nome:"
-    final cognomeMatch = RegExp(r'cognome\s*[:\s]+\s*(\S+(?:\s+\S+)*)', caseSensitive: false).firstMatch(lower);
-    if (cognomeMatch != null) cognome = cognomeMatch.group(1)?.trim() ?? '';
-
-    final nomeMatch = RegExp(r'nome\s*[:\s]+\s*(\S+(?:\s+\S+)*)', caseSensitive: false).firstMatch(lower);
-    if (nomeMatch != null) nome = nomeMatch.group(1)?.trim() ?? '';
-
-    // Euristica: prime due righe non-numeriche spesso sono nome e cognome
-    if (nome.isEmpty && cognome.isEmpty && lines.length >= 2) {
-      final nonDate = lines.where((l) => !_datePattern.hasMatch(l) && l.length > 1).toList();
-      if (nonDate.isNotEmpty) cognome = nonDate.first;
-      if (nonDate.length >= 2) nome = nonDate[1];
-    } else if (cognome.isEmpty && lines.isNotEmpty && !_datePattern.hasMatch(lines.first)) {
-      cognome = lines.first;
+    // Fallback: cerca data ovunque se non estratta con keyword
+    if (dataNascita.isEmpty) {
+      final dateMatch = _datePattern.firstMatch(rawText);
+      if (dateMatch != null) dataNascita = _normalizeDate(dateMatch);
     }
 
     return OcrAnagraficaResult(
@@ -72,5 +86,39 @@ class OcrParserService {
       cognome: cognome,
       dataNascita: dataNascita,
     );
+  }
+
+  /// Estrae il testo dopo il ":" su una singola riga.
+  /// Rimuove i puntini di riempimento tipici dei moduli stampati (es. "Nome: ....... ANDREA").
+  static String _valueAfterColon(String line) {
+    final idx = line.indexOf(':');
+    if (idx == -1) return '';
+    return line
+        .substring(idx + 1)
+        .replaceAll(RegExp(r'\.{2,}'), '') // elimina "......"
+        .replaceAll(RegExp(r'\s{2,}'), ' ') // collassa spazi multipli
+        .trim();
+  }
+
+  /// True se la riga sembra un nome/cognome scritto a mano
+  /// (contiene lettere, non è una keyword di form, non è solo una data).
+  static bool _isNameLine(String line) {
+    return !_datePattern.hasMatch(line) &&
+        !RegExp(r'^(?:nome|cognome|nasc|nato|nata|data)', caseSensitive: false)
+            .hasMatch(line) &&
+        RegExp(r'[a-zA-ZÀ-ÿ]').hasMatch(line);
+  }
+
+  /// Normalizza la data al formato GG/MM/AAAA.
+  /// Anno a 2 cifre: >30 → 1900s, ≤30 → 2000s.
+  static String _normalizeDate(RegExpMatch match) {
+    final day = match.group(1)!.padLeft(2, '0');
+    final month = match.group(2)!.padLeft(2, '0');
+    var year = match.group(3)!;
+    if (year.length == 2) {
+      final y = int.parse(year);
+      year = y > 30 ? '19$year' : '20$year';
+    }
+    return '$day/$month/$year';
   }
 }

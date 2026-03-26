@@ -17,8 +17,6 @@ services:
     build:
       context: .
       dockerfile: mobile/Dockerfile.dev
-      platforms:
-        - linux/amd64
     working_dir: /workspace/mobile/app
     volumes:
       - .:/workspace

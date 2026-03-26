@@ -27,6 +27,7 @@ class _OcrScreenState extends State<OcrScreen> {
 
   _OcrPhase _phase = _OcrPhase.capture;
   bool _isLoading = false;
+  bool _isManualEntry = false;
   String _errorMessage = '';
 
   final _imagePicker = ImagePicker();
@@ -55,7 +56,8 @@ class _OcrScreenState extends State<OcrScreen> {
     try {
       final XFile? file = await _imagePicker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 85,
+        imageQuality: 97, // massima qualità per OCR su testo scritto a mano
+        preferredCameraDevice: CameraDevice.rear,
       );
       if (file == null || !mounted) {
         setState(() => _isLoading = false);
@@ -80,10 +82,25 @@ class _OcrScreenState extends State<OcrScreen> {
       }
 
       final parsed = OcrParserService.parse(rawText);
-      _nomeController.text = parsed.nome;
-      _cognomeController.text = parsed.cognome;
-      _dataNascitaController.text = parsed.dataNascita;
+      final originalNome = parsed.nome;
+      final originalCognome = parsed.cognome;
+      final originalData = parsed.dataNascita;
+      _nomeController.text = originalNome;
+      _cognomeController.text = originalCognome;
+      _dataNascitaController.text = originalData;
       _ocrModified = false;
+
+      // Rileva automaticamente se l'operatore modifica i campi
+      void markModified() => setState(() => _ocrModified = true);
+      _nomeController.addListener(() {
+        if (_nomeController.text != originalNome) markModified();
+      });
+      _cognomeController.addListener(() {
+        if (_cognomeController.text != originalCognome) markModified();
+      });
+      _dataNascitaController.addListener(() {
+        if (_dataNascitaController.text != originalData) markModified();
+      });
 
       setState(() {
         _phase = _OcrPhase.review;
@@ -103,6 +120,7 @@ class _OcrScreenState extends State<OcrScreen> {
   void _retakePhoto() {
     setState(() {
       _phase = _OcrPhase.capture;
+      _isManualEntry = false;
       _errorMessage = '';
       _nomeController.clear();
       _cognomeController.clear();
@@ -114,6 +132,7 @@ class _OcrScreenState extends State<OcrScreen> {
   void _manualEntry() {
     setState(() {
       _phase = _OcrPhase.review;
+      _isManualEntry = true;
       _errorMessage = '';
       _nomeController.clear();
       _cognomeController.clear();
@@ -212,12 +231,33 @@ class _OcrScreenState extends State<OcrScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'Inquadra il documento con nome, cognome e data di nascita, poi scatta la foto.',
-                style: TextStyle(fontSize: 16),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.tips_and_updates,
+                              color: Theme.of(context).colorScheme.primary, size: 20),
+                          const SizedBox(width: 8),
+                          const Text('Consigli per una buona lettura',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      const Text('• Tieni il tagliandino orizzontale e ben illuminato'),
+                      const Text('• Avvicinati finché il testo riempie il mirino'),
+                      const Text('• Tieni ferma la mano prima di scattare'),
+                      const Text('• Evita ombre e riflessi sul foglio'),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 24),
-              Icon(Icons.document_scanner, size: 80, color: Theme.of(context).colorScheme.primary),
+              Icon(Icons.document_scanner,
+                  size: 80, color: Theme.of(context).colorScheme.primary),
               const SizedBox(height: 24),
               FilledButton.icon(
                 onPressed: _takePhotoAndRecognize,
@@ -226,6 +266,12 @@ class _OcrScreenState extends State<OcrScreen> {
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _manualEntry,
+                icon: const Icon(Icons.keyboard),
+                label: const Text('Inserimento manuale'),
               ),
               const Spacer(),
               TextButton(
@@ -239,58 +285,76 @@ class _OcrScreenState extends State<OcrScreen> {
     }
 
     // _OcrPhase.review
+    final bool fromOcr = _phase == _OcrPhase.review && !_isManualEntry;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Revisione anagrafica'),
         actions: [
-          TextButton(
-            onPressed: _retakePhoto,
-            child: const Text('Ritenta foto'),
-          ),
+          if (fromOcr)
+            TextButton(
+              onPressed: _retakePhoto,
+              child: const Text('Ritenta foto'),
+            ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text(
-            'Verifica e correggi i campi riconosciuti dall\'OCR.',
-            style: TextStyle(fontSize: 14),
-          ),
-          const SizedBox(height: 12),
+          if (_ocrModified)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  Icon(Icons.edit, size: 16,
+                      color: Theme.of(context).colorScheme.secondary),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Campo modificato — verrà segnato come corretto manualmente',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           TextField(
             controller: _nomeController,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
+            textCapitalization: TextCapitalization.words,
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
               labelText: 'Nome',
+              suffixIcon: _nomeController.text.isEmpty
+                  ? const Icon(Icons.warning_amber, color: Colors.orange)
+                  : null,
             ),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: _cognomeController,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
+            textCapitalization: TextCapitalization.words,
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
               labelText: 'Cognome',
+              suffixIcon: _cognomeController.text.isEmpty
+                  ? const Icon(Icons.warning_amber, color: Colors.orange)
+                  : null,
             ),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: _dataNascitaController,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
+            keyboardType: TextInputType.datetime,
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
               labelText: 'Data di nascita',
               hintText: 'GG/MM/AAAA',
+              suffixIcon: _dataNascitaController.text.isEmpty
+                  ? const Icon(Icons.warning_amber, color: Colors.orange)
+                  : null,
             ),
           ),
-          const SizedBox(height: 10),
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Dato OCR modificato manualmente'),
-            value: _ocrModified,
-            onChanged: (value) {
-              setState(() => _ocrModified = value ?? false);
-            },
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           FilledButton(
             onPressed: _save,
             child: const Text('Conferma e salva'),

@@ -3,7 +3,9 @@ import 'package:marcia_mobile/screens/barcode_screen.dart';
 import 'package:marcia_mobile/screens/ocr_screen.dart';
 import 'package:marcia_mobile/screens/settings_screen.dart';
 import 'package:marcia_mobile/models/flow_payload.dart';
+import 'package:marcia_mobile/services/auth_service.dart';
 import 'package:marcia_mobile/services/settings_service.dart';
+import 'package:marcia_mobile/services/sheets_service.dart';
 import 'package:marcia_mobile/services/sync_queue_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -16,19 +18,21 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool _isOnline = true;
   int _sessionRecords = 0;
   String _operatorId = 'Non configurato';
   String _sheetId = 'Non configurato';
   bool _settingsLoaded = false;
+  bool _syncing = false;
 
   final _settings = SettingsService.instance;
   final _syncQueue = SyncQueueService.instance;
+  final _auth = AuthService.instance;
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
+    _trySilentSignIn();
   }
 
   Future<void> _loadSettings() async {
@@ -43,34 +47,63 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _trySilentSignIn() async {
+    final ok = await _auth.signInSilently();
+    if (ok && mounted) setState(() {});
+  }
+
+  Future<void> _signIn() async {
+    final ok = await _auth.signIn();
+    if (mounted) {
+      setState(() {});
+      if (!ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Accesso Google non riuscito.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _signOut() async {
+    await _auth.signOut();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _syncNow() async {
+    if (_syncing || _syncQueue.pendingCount == 0) return;
+    setState(() => _syncing = true);
+    final sent = await SheetsService.instance.flushQueue(_syncQueue.mutableQueue);
+    if (mounted) {
+      setState(() => _syncing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(sent > 0 ? '$sent record inviati a Google Sheets.' : 'Nessun record inviato.')),
+      );
+    }
+  }
+
   Future<void> _openFlow(String routeName, {Object? arguments}) async {
     final result = await Navigator.of(context).pushNamed(routeName, arguments: arguments);
     if (result is bool && result) {
       setState(() => _sessionRecords += 1);
+      // Se autenticato, prova subito il flush
+      if (_auth.isSignedIn) await _syncNow();
     }
   }
 
   Future<void> _openSettings() async {
-    final result = await Navigator.of(
-      context,
-    ).pushNamed(SettingsScreen.routeName, arguments: SettingsPayload(
-      operatorId: _operatorId == 'Non configurato' ? '' : _operatorId,
-      sheetId: _sheetId == 'Non configurato' ? '' : _sheetId,
-    ));
-
+    final result = await Navigator.of(context).pushNamed(
+      SettingsScreen.routeName,
+      arguments: SettingsPayload(
+        operatorId: _operatorId == 'Non configurato' ? '' : _operatorId,
+        sheetId: _sheetId == 'Non configurato' ? '' : _sheetId,
+      ),
+    );
     if (result is SettingsPayload) {
-      await _settings.save(
-        operatorId: result.operatorId,
-        sheetId: result.sheetId,
-      );
+      await _settings.save(operatorId: result.operatorId, sheetId: result.sheetId);
       if (mounted) {
         setState(() {
-          _operatorId = result.operatorId.trim().isEmpty
-              ? 'Non configurato'
-              : result.operatorId.trim();
-          _sheetId = result.sheetId.trim().isEmpty
-              ? 'Non configurato'
-              : result.sheetId.trim();
+          _operatorId = result.operatorId.trim().isEmpty ? 'Non configurato' : result.operatorId.trim();
+          _sheetId = result.sheetId.trim().isEmpty ? 'Non configurato' : result.sheetId.trim();
         });
       }
     }
@@ -79,11 +112,12 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final pendingCount = _syncQueue.pendingCount;
-    final statusLabel = _isOnline
-        ? (pendingCount == 0
-              ? 'Online - tutto sincronizzato'
-              : 'Online - $pendingCount record in coda')
-        : 'Offline - $pendingCount record in coda';
+    final isSignedIn = _auth.isSignedIn;
+    final userEmail = _auth.currentUser?.email ?? '';
+
+    final statusLabel = isSignedIn
+        ? (pendingCount == 0 ? 'Sincronizzato con Sheets' : '$pendingCount record in coda')
+        : 'Non autenticato — dati in coda locale';
 
     return Scaffold(
       appBar: AppBar(
@@ -101,39 +135,60 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Card stato autenticazione
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      statusLabel,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Text('Modalita offline'),
-                        const Spacer(),
-                        Switch(
-                          value: !_isOnline,
-                          onChanged: (value) {
-                            setState(() {
-                              _isOnline = !value;
-                            });
-                          },
+                        Icon(
+                          isSignedIn ? Icons.cloud_done : Icons.cloud_off,
+                          color: isSignedIn ? Colors.green : Colors.orange,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            statusLabel,
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                          ),
                         ),
                       ],
                     ),
+                    if (isSignedIn) ...[
+                      const SizedBox(height: 4),
+                      Text(userEmail, style: const TextStyle(fontSize: 13)),
+                      if (pendingCount > 0) ...[
+                        const SizedBox(height: 8),
+                        _syncing
+                            ? const LinearProgressIndicator()
+                            : OutlinedButton.icon(
+                                onPressed: _syncNow,
+                                icon: const Icon(Icons.sync, size: 18),
+                                label: Text('Sincronizza ora ($pendingCount)'),
+                              ),
+                      ],
+                    ],
+                    const SizedBox(height: 8),
+                    isSignedIn
+                        ? TextButton.icon(
+                            onPressed: _signOut,
+                            icon: const Icon(Icons.logout, size: 18),
+                            label: const Text('Esci da Google'),
+                          )
+                        : FilledButton.icon(
+                            onPressed: _signIn,
+                            icon: const Icon(Icons.login),
+                            label: const Text('Accedi con Google'),
+                          ),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 12),
+            // Card info sessione
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(12),
@@ -142,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text('Operatore: $_operatorId'),
                     const SizedBox(height: 4),
-                    Text('Foglio Google: $_sheetId'),
+                    Text('Foglio: $_sheetId', overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 4),
                     Text('Record sessione: $_sessionRecords'),
                   ],
@@ -170,18 +225,8 @@ class _HomeScreenState extends State<HomeScreen> {
             if (!_settingsLoaded)
               const Padding(
                 padding: EdgeInsets.only(top: 12),
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              )
-            else
-              const SizedBox(height: 12),
-            const Text(
-              'Impostazioni salvate in locale. Scanner/OCR reali e sync Sheets da integrare (Fasi 3–5).',
-              style: TextStyle(fontSize: 13),
-            ),
+                child: LinearProgressIndicator(),
+              ),
           ],
         ),
       ),

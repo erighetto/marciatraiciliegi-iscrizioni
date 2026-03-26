@@ -17,7 +17,9 @@ class SyncQueueService {
     return List<AcquisitionRecord>.unmodifiable(_queue);
   }
 
-  /// Rimuove i record inviati con successo (da chiamare quando Sheets/sync conferma).
+  /// Espone la lista interna per il flush diretto da SheetsService.
+  List<AcquisitionRecord> get mutableQueue => _queue;
+
   void removeAt(int index) {
     if (index >= 0 && index < _queue.length) _queue.removeAt(index);
   }
