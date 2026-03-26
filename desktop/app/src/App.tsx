@@ -165,8 +165,16 @@ function App() {
   }, [sessionOperator])
 
   const handleConnectGoogle = () => {
-    window.desktopBridge?.googleAuthOpenWindow?.().then((result: { success?: boolean }) => {
-      if (result?.success) setHasGoogleAuth(true)
+    window.desktopBridge?.googleAuthOpenWindow?.().then((result: { success?: boolean; error?: string }) => {
+      if (result?.success) {
+        setHasGoogleAuth(true)
+      } else {
+        console.error('[Google Auth] Fallito:', result?.error ?? 'errore sconosciuto')
+        alert(`Errore autenticazione Google:\n${result?.error ?? 'errore sconosciuto'}`)
+      }
+    }).catch((err: unknown) => {
+      console.error('[Google Auth] Eccezione:', err)
+      alert(`Errore autenticazione Google:\n${err instanceof Error ? err.message : String(err)}`)
     })
   }
 

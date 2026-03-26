@@ -1,5 +1,9 @@
 const path = require('node:path');
-require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+// In dev __dirname è electron/, in produzione il .env viene copiato in Resources/
+const envPath = process.resourcesPath
+  ? path.join(process.resourcesPath, '.env')
+  : path.join(__dirname, '..', '.env');
+require('dotenv').config({ path: envPath });
 
 const { app, BrowserWindow, ipcMain, safeStorage } = require('electron');
 const fs = require('node:fs');

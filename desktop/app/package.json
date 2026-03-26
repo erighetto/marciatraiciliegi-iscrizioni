@@ -3,6 +3,11 @@
   "private": true,
   "version": "0.1.0",
   "description": "Desktop app per gestione iscrizioni Marcia tra i ciliegi",
+  "homepage": "https://github.com/marciatraiclilegi",
+  "author": {
+    "name": "Marcia tra i Ciliegi",
+    "email": "info@marciatraiclilegi.it"
+  },
   "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
@@ -15,7 +20,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "better-sqlite3": "^11.6.0",
+    "better-sqlite3": "^12.6.2",
     "dotenv": "^16.4.5",
     "google-auth-library": "^9.15.0",
     "googleapis": "^144.0.0",
@@ -54,6 +59,17 @@
       "electron/**/*",
       "package.json"
     ],
+    "extraResources": [
+      {
+        "from": ".env",
+        "to": ".env"
+      }
+    ],
+    "linux": {
+      "target": [
+        "deb"
+      ]
+    },
     "mac": {
       "target": [
         "dmg"

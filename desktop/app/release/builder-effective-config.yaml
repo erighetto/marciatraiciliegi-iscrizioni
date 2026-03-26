@@ -8,6 +8,9 @@ files:
       - dist/**/*
       - electron/**/*
       - package.json
+linux:
+  target:
+    - deb
 mac:
   target:
     - dmg
