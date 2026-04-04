@@ -8,6 +8,9 @@ files:
       - dist/**/*
       - electron/**/*
       - package.json
+extraResources:
+  - from: .env
+    to: .env
 linux:
   target:
     - deb
